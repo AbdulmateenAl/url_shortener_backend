@@ -5,7 +5,7 @@ import random
 import string
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["https://url-shortener-abdulmateens-projects.vercel.app"]}})
+CORS(app, resources={r"/*": {"origins": ["https://url-shortener-chi-nine.vercel.app/"]}})
 
 @app.route('/api/data', methods=['GET'])
 def get_data():
