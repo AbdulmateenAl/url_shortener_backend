@@ -56,6 +56,3 @@ def create():
     cur.close()
     conn.close()
     return jsonify({"message": "message received!", "longUrl": url, "shortUrl": shortUrl}), 200
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
