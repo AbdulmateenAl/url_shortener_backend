@@ -3,6 +3,11 @@ from flask_cors import CORS
 import psycopg2
 import random
 import string
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": ["https://url-shortener-chi-nine.vercel.app/"]}})
@@ -30,9 +35,9 @@ def create():
     shortUrl = 'shorturl/' + code
 
     conn = psycopg2.connect(database="postgres",
-                        host="aws-0-eu-central-1.pooler.supabase.com",
-                        user="postgres.zbcxlqlgrhlncpuipnli",
-                        password="123Abdul.mateen",
+                        host=os.getenv("DATABASE_HOST"),
+                        user=os.getenv("DATABASE_USER"),
+                        password=os.getenv("DATABASE_PASSWORD"),
                         port="6543")
     
     cur = conn.cursor()
