@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect
 from flask_cors import CORS
 import psycopg2
 import random
@@ -29,10 +29,10 @@ def generate_code(length=6):
 def create():
     #Getting data from frontend
     data = request.get_json()
-    url = data.get('value')  #Gets the url
+    long_url = data.get('value')  #Gets the url
 
     code = generate_code(length=6)
-    shortUrl = 'shorturl/' + code
+    short_url = request.url_root + code
 
     conn = psycopg2.connect(database="postgres",
                         host=os.getenv("DATABASE_HOST"),
@@ -53,11 +53,36 @@ def create():
     cur.execute("""INSERT INTO url_shortener(original_url, shortened_url)
                 VALUES(%s, %s);
                 """,
-                (url, shortUrl))
+                (long_url, short_url))
 
     conn.commit()
     print("Created sucessfull!")
 
     cur.close()
     conn.close()
-    return jsonify({"message": "message received!", "longUrl": url, "shortUrl": shortUrl}), 200
+    return jsonify({"message": "message received!", "long_url": long_url, "short_url": short_url}), 200
+
+@app.route('/<short_url>')
+def redirect_url(short_url):
+    conn = psycopg2.connect(database="postgres",
+                        host=os.getenv("DATABASE_HOST"),
+                        user=os.getenv("DATABASE_USER"),
+                        password=os.getenv("DATABASE_PASSWORD"),
+                        port="6543")
+    
+    cur = conn.cursor()
+
+    cur.execute("""SELECT original_url FROM url_shortener WHERE short_url = %s""", (short_url,))
+    #fetch original_url if it exists
+    result = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    if result:
+        original_url = result[0]
+        return redirect(original_url)
+    return "URL Not Found"
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', debug=True)
