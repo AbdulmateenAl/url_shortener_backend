@@ -10,7 +10,7 @@ import os
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["https://url-shortener-chi-nine.vercel.app/"]}})
+CORS(app)
 
 @app.route('/api/data', methods=['GET'])
 def get_data():
@@ -19,7 +19,7 @@ def get_data():
         'message': 'Hello World!',
         }
 
-# A fuction that generates codes
+# A fuction that generates random code of six characters
 def generate_code(length=6):
     characters = string.ascii_letters + string.digits
     short_codes = ''.join(random.choices(characters, k=length))
@@ -29,8 +29,9 @@ def generate_code(length=6):
 def create():
     #Getting data from frontend
     data = request.get_json()
-    long_url = data.get('value')  #Gets the url
+    long_url = data.get('value')  #Gets the long_url
 
+    global code
     code = generate_code(length=6)
     short_url = request.url_root + code
 
@@ -46,7 +47,7 @@ def create():
     cur.execute("""CREATE TABLE IF NOT EXISTS url_shortener(
                 id            SERIAL PRIMARY KEY,
                 original_url  VARCHAR(255) NOT NULL,
-                shorten_url   VARCHAR(255),
+                shorten_url   VARCHAR(255) UNIQUE NOT NULL,
                 createdAt     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )""")
     
@@ -64,6 +65,7 @@ def create():
 
 @app.route('/<short_url>')
 def redirect_url(short_url):
+    short_url = request.url_root + code
     conn = psycopg2.connect(database="postgres",
                         host=os.getenv("DATABASE_HOST"),
                         user=os.getenv("DATABASE_USER"),
@@ -72,7 +74,7 @@ def redirect_url(short_url):
     
     cur = conn.cursor()
 
-    cur.execute("""SELECT original_url FROM url_shortener WHERE short_url = %s""", (short_url,))
+    cur.execute("""SELECT original_url FROM url_shortener WHERE shortened_url = %s""", (short_url,))
     #fetch original_url if it exists
     result = cur.fetchone()
 
@@ -82,7 +84,7 @@ def redirect_url(short_url):
     if result:
         original_url = result[0]
         return redirect(original_url)
-    return "URL Not Found"
+    return short_url
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
